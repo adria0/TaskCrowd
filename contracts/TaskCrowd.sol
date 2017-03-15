@@ -180,11 +180,6 @@ contract TaskCrowd {
        
   }
   
-  function crash() {
-       Task storage task = tasks[tasksIndex[1]-1];
-       task.status = TaskStatus.Approving;
-  }
-
   function approveTask(
     uint16 _taskId
   ) onlyMembers() external returns (uint16) 

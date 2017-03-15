@@ -14,7 +14,7 @@ contract('TaskCrowdFactory', accounts => {
 
     TaskCrowdFactory.deployed()
     .then( _factory => {
-      return _factory.create("niceshower",1,"capybara",rockcavy,"rockcavy" , { from : capybara } );
+      return _factory.create("niceshower",1,capybara,"capybara",rockcavy,"rockcavy" , { from : capybara } );
     }).then ( _result => {
       assert.equal( _result.logs.length, 1, "One contract is created");
       tc = TaskCrowd.at(_result.logs[0].args.addr);

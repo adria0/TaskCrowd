@@ -9,6 +9,7 @@ contract TaskCrowdFactory {
     function create(
        string  _name,
        uint8   _rate,
+       address _member1,
 	   string  _member1Name,
 	   address _member2,
 	   string  _member2Name
@@ -17,7 +18,7 @@ contract TaskCrowdFactory {
 	    TaskCrowd taskCrowd = new TaskCrowd(
 	    	_name,
 	    	_rate,
-	    	msg.sender,_member1Name,
+	    	_member1,_member1Name,
 	    	_member2,_member2Name
 	    );
 	    

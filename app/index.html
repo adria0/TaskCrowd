@@ -1,0 +1,90 @@
+
+<html lang="en"><head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>TaskCrowd</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.css" integrity="sha256-uHu2MAd1LvCOVEAhvMld4LpJi7dUGS7GVzvG/5B3hlo=" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.css" integrity="sha256-ECB9bbROLGm8wOoEbHcHRxlHgzGqYpDtNTgDTyDz0wg=" crossorigin="anonymous" />
+  <link rel="stylesheet" href="app.css" />
+
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"
+    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+    crossorigin="anonymous"></script>
+  <link rel="icon" type="image/png" href="images/favicon.png">
+
+  <script src="app.js"></script>
+
+</head>
+<body>
+
+  <div class="topcorner" id="currentMember"></div>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+    <div class="row">
+      <div class="one-half column">
+
+        <img src="img/logo.png">
+        <h2 id="taskCrowdName">Task crowd</h2>
+
+        <div id="status"></div>  
+
+        <ul class="tab-nav">
+          <li>
+            <a class="button active" href="#membersTab">Members</a>
+          </li>
+          <li>
+            <a class="button" href="#tasksTab">Tasks</a>
+          </li>
+          <li>
+            <a class="button" href="#debugTab">Debug</a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+
+          <div class="tab-pane active" id="membersTab">
+
+            <table id="members">
+              <thead><tr><th>Name</th><th>Approved By</th><th>Approved By</th><th>Actions</th></tr></thead>
+            </table> 
+            <button id="addMemberBtn">Add</button>
+            
+          </div>
+          <div class="tab-pane" id="tasksTab">
+
+            <table id="tasks">
+              <thead><tr><th>Id</th><th>Owner</th><th>Description</th><th>Status</th><th>Workload</th><th>ApprovedBy</th><th>ApprovedBy</th><th>Actions</th></tr></thead>
+            </table> 
+            <button id="addTaskBtn">Add</button>
+            
+          </div>
+          <div class="tab-pane" id="debugTab">
+
+            <div id="statusline" class="info"></div>
+            <div id="logs" class="logs" style="height: 400px; overflow-y: scroll;""></div>
+            
+          </div>
+        </div>
+     </div>
+  </div>
+  </div>
+
+
+</body></html>
