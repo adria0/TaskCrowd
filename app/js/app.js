@@ -42,7 +42,7 @@ function member_name(_addr) {
 function set_status(_msg, _loading) {
 
   if (_loading) {
-    _msg = "<img src='https://media.giphy.com/media/eb21J3yEB8yGY/source.gif' />"+_msg;
+    _msg = "<img src='img/loading.gif' />"+_msg;
   }
   $("#status").html(_msg)  
 }
@@ -88,22 +88,31 @@ function taskstatus2str(_status) {
   return (["Pending","Finished","Approving","Approved"])[_status];
 }
 
+function is_account_member() {
+  var member = membersByAddr[account];
+  if ( member == null ) return false;
+  return ( member.approver1 != ADDRZERO && member.approver2 != ADDRZERO )
+}
+
 // Metamask fiendly getTransactionReceiptMined
 function getTransactionReceiptMined(txnHash, interval) {
     var transactionReceiptAsync;
     interval = interval ? interval : 500;
     transactionReceiptAsync = function(txnHash, resolve, reject) {
         try {
-            web3.eth.getTransactionReceipt(txnHash)
-                .then(function (receipt) {
-                    if (receipt == null) {
-                        setTimeout(function () {
-                            transactionReceiptAsync(txnHash, resolve, reject);
-                        }, interval);
-                    } else {
-                        resolve(receipt);
-                    }
-                });
+            console.log("web3.eth.getTransactionReceipt(\""+txnHash+"\")");
+            web3.eth.getTransactionReceipt(txnHash, (_,receipt) => {
+                if (receipt == null || receipt.blockNumber == null ) {
+                    console.log("recipt null, retry...")
+                    setTimeout(function () {
+                        transactionReceiptAsync(txnHash, resolve, reject);
+                    }, interval);
+                } else {
+                    console.log("recipt ok, done ...")
+                    console.log(receipt);
+                    resolve(receipt);
+                }
+            });
         } catch(e) {
             reject(e);
         }
@@ -124,18 +133,8 @@ function getTransactionReceiptMined(txnHash, interval) {
 
 function refresh() {
 
-   web3.eth.getBlockNumber( (_error, _blockNumber) => {
-     var blocksSinceStart
-     if (startingBlockNumber == -1) {
-       startingBlockNumber = _blockNumber
-       blocksSinceStart = 0
-     } else {
-       blocksSinceStart = _blockNumber - startingBlockNumber
-     }
-     lineStatusBlock = blocksSinceStart + " blocks ("+startingBlockNumber+"&rarr;"+_blockNumber+")"
-   });
-
    web3.eth.getAccounts( (_err, _accs) => {
+
     if (_err != null) {
       add_log("There was an error fetching your accounts.");
       return;
@@ -151,13 +150,22 @@ function refresh() {
     if (account != _accs[0] ) {
 
       account = _accs[0];
+      update_project_info();
 
-      set_member_icon(account,$("#currentMember")[0])
     }
 
    });
 
-   refreshCount++;
+   web3.eth.getBlockNumber( (_error, _blockNumber) => {
+     var blocksSinceStart
+     if (startingBlockNumber == -1) {
+       startingBlockNumber = _blockNumber
+       blocksSinceStart = 0
+     } else {
+       blocksSinceStart = _blockNumber - startingBlockNumber
+     }
+     lineStatusBlock = blocksSinceStart + " blocks ("+startingBlockNumber+"&rarr;"+_blockNumber+")"
+   });
 
    var taskcrowdAddress
    try {
@@ -165,6 +173,8 @@ function refresh() {
    } catch(e) {}
 
    document.getElementById("statusline").innerHTML = lineStatusNetwork + "<br>" + taskcrowdAddress + "<br>" + lineStatusBlock;
+
+   refreshCount++;
 
    setTimeout(function(){
        refresh();
@@ -182,7 +192,7 @@ function add_member() {
   .then ( (_tx) => {
     console.log(_tx);
     set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx);     
+    return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
     update_project_info();
@@ -202,7 +212,7 @@ function approve_member(_addr) {
   .then ( (_tx) => {
     console.log(_tx);
     set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx);     
+    return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
     update_project_info();
@@ -227,7 +237,7 @@ function add_task() {
   .then ( (_tx) => {
     console.log(_tx);
     set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx);     
+    return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
     update_project_info();
@@ -249,7 +259,7 @@ function finish_task(_taskId) {
   .then ( (_tx) => {
     console.log(_tx);
     set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx);     
+    return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
     update_project_info();
@@ -269,7 +279,7 @@ function approve_task(_taskId) {
   .then ( (_tx) => {
     console.log(_tx);
     set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx);     
+    return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
     update_project_info();
@@ -317,6 +327,10 @@ function update_project_info() {
 
     }).then( () => {
 
+       set_member_icon(account,$("#currentMember")[0])
+       $("#addMemberBtn").prop("disabled",!is_account_member());
+       $("#addTaskBtn").prop("disabled",!is_account_member());
+
        var table = document.getElementById("members");
 
        var rows = table.rows.length
@@ -324,6 +338,8 @@ function update_project_info() {
           table.deleteRow(rows-1);
           rows--;
        }
+
+       members.sort((a, b)=>{return a.name.localeCompare(b.name)});
 
        for (i=0;i<members.length;i++) {
 
@@ -340,7 +356,8 @@ function update_project_info() {
           if (members[i].approver2 != ADDRZERO) {
             set_member_icon(members[i].approver2,cellApprover2);
           } else {
-            cellActions.innerHTML = "<button onclick='approve_member(\""+members[i].address+"\")'>Approve</button>";
+            if (members[i].approver1 != account && is_account_member() )
+              cellActions.innerHTML = "<button onclick='approve_member(\""+members[i].address+"\")'>Approve</button>";
           }
        }
 
@@ -370,8 +387,6 @@ function update_project_info() {
                approver2     : _fields[8]
             }
 
-            console.log(task)
-
             tasks.push(task);
           })
           promises.push(promise);
@@ -387,8 +402,7 @@ function update_project_info() {
           table.deleteRow(rows-1);
           rows--;
        }
-              add_log("begin");
-
+       tasks.sort((a, b)=>{return a.taskId-b.taskId});
 
        for (i=0;i<tasks.length;i++) {
 
@@ -418,17 +432,22 @@ function update_project_info() {
 
           switch (tasks[i].status.toNumber()) {
             case 0:
-              cellActions.innerHTML = "<button onclick='finish_task("+tasks[i].taskId+")'>Finish</button>";
+              console.log(account+"=="+tasks[i].member)
+              if (account==tasks[i].member)
+                cellActions.innerHTML = "<button onclick='finish_task("+tasks[i].taskId+")'>Finish</button>";
               break;
             case 1:
+              if (account!=tasks[i].member && is_account_member())
+                cellActions.innerHTML = "<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>";
+              break;
             case 2:
-              cellActions.innerHTML = "<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>";
+              if (account!=tasks[i].member && account!=tasks[i].approver1 && is_account_member())
+                cellActions.innerHTML = "<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>";
               break;
           }
 
        }
        add_log("done");
-       if (refreshCount==0) refresh();
 
 
     }).catch( (e) => {
@@ -445,25 +464,29 @@ window.onload = function() {
     return taskCrowd.name();
   }).then ( _name => {
     document.getElementById("taskCrowdName").innerHTML = _name +" Task Crowd ";
-    update_project_info();
+
+    web3.version.getNetwork( (_error, _network) => {
+
+       if (_error != null) {
+         document.getElementById("network").innerHTML = errror;
+         return;
+       }
+
+       var networkName = "Network "+_network;
+
+       if (_network == 1) networkName = "Main Network";
+       else if (_network == 2) networkName = "Morden Network";
+       else if (_network == 3) networkName = "Ropsten Network";
+       else networkName = "Unknown Network";
+
+       lineStatusNetwork = networkName;
+
+       refresh();
+
+    })
+
   });
 
-  web3.version.getNetwork( (_error, _network) => {
-
-     if (_error != null) {
-       document.getElementById("network").innerHTML = errror;
-       return;
-     }
-
-     var networkName = "Network "+_network;
-
-     if (_network == 1) networkName = "Main Network";
-     else if (_network == 2) networkName = "Morden Network";
-     else if (_network == 3) networkName = "Ropsten Network";
-     else networkName = "Unknown Network";
-
-     lineStatusNetwork = networkName;
-  })
 
   $("#addMemberBtn").click( () => { add_member(); })
   $("#addTaskBtn").click( () => { add_task(); })

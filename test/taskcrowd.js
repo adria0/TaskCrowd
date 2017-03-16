@@ -97,6 +97,14 @@ contract('TaskCrowdFactory', accounts => {
     })
   });
 
+  it("a member cannot add a task for a non-member", function() {
+    return tc.addTask( cuy, 1, "learngolang", 1000, { from : capybara } )
+    .then ( _result => {   
+      assert.equal( _result.logs.length, 1);      
+      assert.equal( _result.logs[0].event, "LogError");
+    })
+  });
+
   it("cannot create two tasks with the same id", function() {
     return tc.addTask( rockcavy, 1, "tumbling", 1000, { from : capybara } )
     .then ( _result => {   

@@ -141,6 +141,7 @@ contract TaskCrowd {
   )  onlyMembers() external returns (uint16) {
 
         if (msg.sender == _member) return logError(301);
+        if (membersIndex[_member] == 0) return logError(306);
         if (tasksIndex[_taskId] != 0 ) return logError(302);
 
         tasks.push( Task({
