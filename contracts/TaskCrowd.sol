@@ -13,13 +13,9 @@ contract TaskCrowd {
 
    // Logs  ------------------------------------------------------------------
 
-   event LogError(address sender, uint16 errno);
-   event LogMemberAdded(address member);
-   event LogMemberApproved(address member);
-   event LogTaskAdded(uint16 taskId);
-   event LogTaskFinished(uint16 taskId);
-   event LogTaskApproving(uint16 taskId);
-   event LogTaskApproved(uint16 taskId);
+   event LogError(uint16 errno);
+   event LogMemberAction(string msg, address member);
+   event LogTaskAction(string msg, uint16 taskId);
 
    // Construction parameters  -----------------------------------------------
 
@@ -67,7 +63,7 @@ contract TaskCrowd {
     uint16 errNo
   ) internal returns (uint16)
   {
-    LogError(msg.sender,errNo);
+    LogError(errNo);
     return errNo;
   }
 
@@ -90,7 +86,8 @@ contract TaskCrowd {
             approver2 : _member2
         }));
         membersIndex[_member1] = members.length;
-        
+        LogMemberAction("member-added",_member1);
+
         members.push( Member({
             addr      : _member2,
             name      : _memberName2,
@@ -98,12 +95,13 @@ contract TaskCrowd {
             approver2 : _member1
         }));
         membersIndex[_member2] = members.length;
+        LogMemberAction("member-added",_member2);
   }
 
   function addMember(
     address _member,
     string _name
-  ) onlyMembers() external returns (uint16) 
+  ) onlyMembers() returns (uint16) 
   {
       if (membersIndex[_member] != 0) return logError(101);
       
@@ -114,7 +112,7 @@ contract TaskCrowd {
             approver2 : 0
         }));
         membersIndex[_member] = members.length;
-        LogMemberAdded(_member);
+        LogMemberAction("member-added",_member);
   }
 
   function approveMember(
@@ -130,7 +128,7 @@ contract TaskCrowd {
       
       member.approver2 = msg.sender;
       
-      LogMemberApproved(_member);
+      LogMemberAction("member-approved",_member);
   }
 
   function addTask(
@@ -158,7 +156,7 @@ contract TaskCrowd {
 
         tasksIndex[_taskId] = tasks.length;
         
-        LogTaskAdded(_taskId);
+        LogTaskAction("task-added",_taskId);
   }
   
   function finishTask(
@@ -177,7 +175,7 @@ contract TaskCrowd {
        task.finalWorkload = _finalWorkload;
        task.status = TaskStatus.Finished;
        
-       LogTaskFinished(_taskId);
+       LogTaskAction("task-finished",_taskId);
        
   }
   
@@ -193,7 +191,7 @@ contract TaskCrowd {
     if (task.status == TaskStatus.Finished) {
       task.status = TaskStatus.Approving;
       task.approver1 = msg.sender;
-      LogTaskApproving(_taskId);
+      LogTaskAction("task-approving",_taskId);
       return;
     }
 
@@ -201,7 +199,7 @@ contract TaskCrowd {
        if (task.approver1 == msg.sender) return logError(503);
        task.approver2 = msg.sender;
        task.status = TaskStatus.Approved;
-       LogTaskApproved(_taskId);
+       LogTaskAction("task-approved",_taskId);
        return;
     }
 

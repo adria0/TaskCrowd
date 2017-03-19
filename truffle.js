@@ -5,6 +5,7 @@ module.exports = {
     "app.js": [
       "js/skeleton-tabs.js",
       "js/blockies.js",
+      "js/helper.js",
       "js/app.js"
     ],
     "app.css": [

@@ -1,27 +1,15 @@
 var ADDRZERO = "0x0000000000000000000000000000000000000000"
-var MINING_TIMEOUT = 60000
 
-var taskCrowd
-
-var refreshCount = 0
-var startingBlockNumber = -1
 var account
-
+var taskCrowd
 var members       = []
 var membersByAddr = new Object();
-var tasks   = []
+var tasks         = []
 
+var refreshCount        = 0
+var startingBlockNumber = -1
 var lineStatusBlock
 var lineStatusNetwork
-
-
-function addr_url(_addr,_text) {
-  return "<a href=https://testnet.etherscan.io/address/"+_addr+" target="+_addr+">"+_text+"</a>";
-}
-
-function tx_url(_tx) {
-  return "<a href=https://testnet.etherscan.io/tx/"+_tx+" target="+_tx+">"+_tx+"</a>";
-}
 
 function member_name(_addr) {
 
@@ -54,9 +42,19 @@ function member_icon(_addr, _scale) {
     size: 8, // width/height of the icon in blocks, default: 8
     scale: _scale, // width/height of each block in pixels, default: 4
     spotcolor: '#000', // each pixel has a 13% chance of being of a third color, 
-    bgcolor: '#ECF0F1',
-    //color: '#444'
-  });  
+    bgcolor: '#ECF0F1'
+  });
+
+  icon.addEventListener('click', () => {
+    var ct = document.getElementById("copyTarget");
+    ct.style.display = 'block';
+    ct.setAttribute("value",_addr);
+    ct.focus()
+    ct.setSelectionRange(0,_addr.length)
+    document.execCommand('copy');
+    ct.style.display = 'none';
+    toastr.info(addr_url(_addr,'Address ')+' copied to clipboard');
+  }, false);
 
   return icon;
 }
@@ -69,7 +67,7 @@ function set_member_icon(_addr, _element) {
   var e = document.createElement("div")
   e.setAttribute("class","blockymember");
   var text = document.createElement("div")
-  text.innerHTML = addr_url(_addr,name);
+  text.innerHTML = name;
   var icon = member_icon(_addr,4)
   icon.setAttribute("class","blocky");
   e.appendChild(icon)
@@ -77,7 +75,6 @@ function set_member_icon(_addr, _element) {
   _element.appendChild(e)
 
 }
-
 
 function add_log(_message) {
   var logs = document.getElementById("logs");
@@ -94,44 +91,15 @@ function is_account_member() {
   return ( member.approver1 != ADDRZERO && member.approver2 != ADDRZERO )
 }
 
-// Metamask fiendly getTransactionReceiptMined
-function getTransactionReceiptMined(txnHash, interval) {
-    var transactionReceiptAsync;
-    interval = interval ? interval : 500;
-    transactionReceiptAsync = function(txnHash, resolve, reject) {
-        try {
-            console.log("web3.eth.getTransactionReceipt(\""+txnHash+"\")");
-            web3.eth.getTransactionReceipt(txnHash, (_,receipt) => {
-                if (receipt == null || receipt.blockNumber == null ) {
-                    console.log("recipt null, retry...")
-                    setTimeout(function () {
-                        transactionReceiptAsync(txnHash, resolve, reject);
-                    }, interval);
-                } else {
-                    console.log("recipt ok, done ...")
-                    console.log(receipt);
-                    resolve(receipt);
-                }
-            });
-        } catch(e) {
-            reject(e);
-        }
-    };
+function remove_table_rows(_table) {
+   var rows = _table.rows.length
+   while (rows > 1)  {
+      _table.deleteRow(rows-1);
+      rows--;
+   }
+}
 
-    if (Array.isArray(txnHash)) {
-        var promises = [];
-        txnHash.forEach(function (oneTxHash) {
-            promises.push(getTransactionReceiptMined(oneTxHash, interval));
-        });
-        return Promise.all(promises);
-    } else {
-        return new Promise(function (resolve, reject) {
-                transactionReceiptAsync(txnHash, resolve, reject);
-            });
-    }
-};
-
-function refresh() {
+function refresh_current_account() {
 
    web3.eth.getAccounts( (_err, _accs) => {
 
@@ -169,7 +137,7 @@ function refresh() {
 
    var taskcrowdAddress
    try {
-      taskcrowdAddress = "Deployed at "+addr_url(TaskCrowd.address,TaskCrowd.address);
+      taskcrowdAddress = "Deployed at "+addr_url(taskCrowd.address,taskCrowd.address);
    } catch(e) {}
 
    document.getElementById("statusline").innerHTML = lineStatusNetwork + "<br>" + taskcrowdAddress + "<br>" + lineStatusBlock;
@@ -177,26 +145,24 @@ function refresh() {
    refreshCount++;
 
    setTimeout(function(){
-       refresh();
+       refresh_current_account();
    }, 1000);
 
 };
 
-function add_member() {
-
-  var memberName = prompt("Member name?")
-  var memberAddress = prompt("Member address?")
-
-  add_log("Adding member "+memberAddress);
-  taskCrowd.addMember(memberAddress, memberName)
+function do_transaction(_promise) {
+  _promise
   .then ( (_tx) => {
-    console.log(_tx);
+    toastr.info('Operation sent');
+    add_log("tx "+tx_url(_tx.tx,_tx.tx));
     set_status("Waiting network agrees with operation...",true);
     return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
+    toastr.info('Success');
     update_project_info();
   }).catch ( (e) => {
+    toastr.error('Failed, see logs')
     console.log(e);
     add_log("failed "+e);
     set_status("",false);
@@ -205,47 +171,58 @@ function add_member() {
 
 }
 
+function errcode_2_str(_errCode) {
+  return "Error "+  _errCode;
+}
+
+function add_member() {
+
+  var memberName = prompt("Member name?")
+  if (memberName == null) return;
+  var memberAddress = prompt("Member address?")
+  if (memberAddress == null) return;
+
+  taskCrowd.addMember.call(memberAddress, memberName)
+  .then ( (_errCode) => {
+    if (_errCode != 0) {
+       toastr.error("Failed" + errcode_2_str(_errCode));
+       return;
+    }    
+    do_transaction(taskCrowd.addMember(memberAddress, memberName))
+  })
+}
+
 function approve_member(_addr) {
 
-  add_log("Approving member "+_addr);
-  taskCrowd.approveMember(_addr)
-  .then ( (_tx) => {
-    console.log(_tx);
-    set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx.tx);     
-  }).then ( ( _resolve, _reject ) => {
-    set_status("",false);
-    update_project_info();
-  }).catch ( (e) => {
-    console.log(e);
-    add_log("failed "+e);
-    set_status("",false);
-    alert("Operation failed");
+  taskCrowd.approveMember.call(_addr)
+  .then ( (_errCode) => {
+    if (_errCode != 0) {
+       toastr.error("Failed" + errcode_2_str(_errCode));
+       return;
+    }    
+    do_transaction(taskCrowd.approveMember(_addr));
   })
 
 }
 
 function add_task() {
 
-  var taskId = prompt("Task id?")
+  var taskId = prompt("New task id?")
+  if (taskId == null) return;
   var member = prompt("Member address?")
+  if (member == null) return;
   var description = prompt("Description?")
+  if (description == null) return;
   var maxWorkload = prompt("Max workload?")
+  if (maxWorkload == null) return;
 
-  add_log("Adding task "+taskId);
-  taskCrowd.addTask(member,taskId,description,maxWorkload)
-  .then ( (_tx) => {
-    console.log(_tx);
-    set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx.tx);     
-  }).then ( ( _resolve, _reject ) => {
-    set_status("",false);
-    update_project_info();
-  }).catch ( (e) => {
-    console.log(e);
-    add_log("failed "+e);
-    set_status("",false);
-    alert("Operation failed");
+  taskCrowd.addTask.call(member,taskId,description,maxWorkload)
+  .then ( (_errCode) => {
+    if (_errCode != 0) {
+       toastr.error("Failed" + errcode_2_str(_errCode));
+       return;
+    }    
+    do_transaction(taskCrowd.addTask(member,taskId,description,maxWorkload))
   })
 
 }
@@ -253,45 +230,31 @@ function add_task() {
 function finish_task(_taskId) {
 
   var finalWorkload = prompt("FinalWorkload?")
+  if (finalWorkload == null) return;
 
-  add_log("finish_task"+_taskId);
-  taskCrowd.finishTask(_taskId,finalWorkload)
-  .then ( (_tx) => {
-    console.log(_tx);
-    set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx.tx);     
-  }).then ( ( _resolve, _reject ) => {
-    set_status("",false);
-    update_project_info();
-  }).catch ( (e) => {
-    console.log(e);
-    add_log("failed "+e);
-    set_status("",false);
-    alert("Operation failed");
+  taskCrowd.finishTask.call(_taskId,finalWorkload)
+  .then ( (_errCode) => {
+    if (_errCode != 0) {
+       toastr.error("Failed" + errcode_2_str(_errCode));
+       return;
+    }    
+    do_transaction(taskCrowd.finishTask(_taskId,finalWorkload))
   })
 
 }
 
 function approve_task(_taskId) {
 
-  add_log("approve_task"+_taskId);
-  taskCrowd.approveTask(_taskId)
-  .then ( (_tx) => {
-    console.log(_tx);
-    set_status("Waiting network agrees with operation...",true);
-    return getTransactionReceiptMined(_tx.tx);     
-  }).then ( ( _resolve, _reject ) => {
-    set_status("",false);
-    update_project_info();
-  }).catch ( (e) => {
-    console.log(e);
-    add_log("failed "+e);
-    set_status("",false);
-    alert("Operation failed");
+  taskCrowd.approveTask.call(_taskId)
+  .then ( (_errCode) => {
+    if (_errCode != 0) {
+       toastr.error("Failed" + errcode_2_str(_errCode));
+       return;
+    }    
+    do_transaction(taskCrowd.approveTask(_taskId))
   })
 
 }
-
 
 function update_project_info() {
 
@@ -327,19 +290,15 @@ function update_project_info() {
 
     }).then( () => {
 
+       members.sort((a, b)=>{return a.name.localeCompare(b.name)});
+
        set_member_icon(account,$("#currentMember")[0])
        $("#addMemberBtn").prop("disabled",!is_account_member());
        $("#addTaskBtn").prop("disabled",!is_account_member());
 
        var table = document.getElementById("members");
 
-       var rows = table.rows.length
-       while (rows > 1)  {
-          table.deleteRow(rows-1);
-          rows--;
-       }
-
-       members.sort((a, b)=>{return a.name.localeCompare(b.name)});
+       remove_table_rows(table)
 
        for (i=0;i<members.length;i++) {
 
@@ -395,14 +354,11 @@ function update_project_info() {
 
      }).then( () => {
 
+       tasks.sort((a, b)=>{return a.taskId-b.taskId});
+
        var table = document.getElementById("tasks");
 
-       var rows = table.rows.length
-       while (rows > 1)  {
-          table.deleteRow(rows-1);
-          rows--;
-       }
-       tasks.sort((a, b)=>{return a.taskId-b.taskId});
+       remove_table_rows(table)
 
        for (i=0;i<tasks.length;i++) {
 
@@ -458,11 +414,20 @@ function update_project_info() {
 
 window.onload = function() {
 
+  toastr.options.timeOut = 4000;
+
+/*
   TaskCrowd.deployed()
   .then( _taskCrowd => {
     taskCrowd = _taskCrowd;
     return taskCrowd.name();
   }).then ( _name => {
+
+*/    
+  taskCrowd = TaskCrowd.at("0x7b6b01d2a669d602c87d5b453c2ed9115daddbb7");
+  taskCrowd.name()
+  .then ( _name => {
+
     document.getElementById("taskCrowdName").innerHTML = _name +" Task Crowd ";
 
     web3.version.getNetwork( (_error, _network) => {
@@ -481,12 +446,11 @@ window.onload = function() {
 
        lineStatusNetwork = networkName;
 
-       refresh();
+       refresh_current_account();
 
     })
 
   });
-
 
   $("#addMemberBtn").click( () => { add_member(); })
   $("#addTaskBtn").click( () => { add_task(); })
