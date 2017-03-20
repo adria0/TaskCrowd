@@ -2,6 +2,18 @@ pragma solidity ^0.4.8;
 
 contract TaskCrowd {
 
+   // Constants --------------------------------------------------------------
+
+  uint16 constant ERRNONE                = 0;
+  uint16 constant ERRMEMBERALREADYEXISTS = 1;
+  uint16 constant ERRMEMBERNOTEXISTS     = 2;
+  uint16 constant ERRINVALIDSTATE        = 3;
+  uint16 constant ERRINVALIDCALLER       = 4;
+  uint16 constant ERRTASKALREADYEXISTS   = 5;
+  uint16 constant ERRTASKNOTEXISTS       = 6;
+  uint16 constant ERRINVALIDWORKLOAD     = 7;
+
+
    // State machines  --------------------------------------------------------
 
    enum TaskStatus {
@@ -11,17 +23,20 @@ contract TaskCrowd {
      Approved
    }
 
+
    // Logs  ------------------------------------------------------------------
 
    event LogError(uint16 errno);
    event LogMemberAction(string msg, address member);
    event LogTaskAction(string msg, uint16 taskId);
 
+
    // Construction parameters  -----------------------------------------------
 
    string  public name;
    address public superseded;
    uint8   public rate; // rate per hour
+
 
    // State variables --------------------------------------------------------
 
@@ -50,12 +65,14 @@ contract TaskCrowd {
    Task[] public tasks;
    mapping ( uint16 => uint ) tasksIndex;
 
+
   // Modifiers --------------------------------------------------------------
 
    modifier onlyMembers() {
        if (!isMemberEnrolled(msg.sender)) throw;
        _;
    }
+
 
    // The code ---------------------------------------------------------------
  
@@ -103,7 +120,8 @@ contract TaskCrowd {
     string _name
   ) onlyMembers() returns (uint16) 
   {
-      if (membersIndex[_member] != 0) return logError(101);
+      if (membersIndex[_member] != 0)
+        return logError(ERRMEMBERALREADYEXISTS);
       
         members.push( Member({
             addr      : _member,
@@ -113,22 +131,25 @@ contract TaskCrowd {
         }));
         membersIndex[_member] = members.length;
         LogMemberAction("member-added",_member);
+        return ERRNONE;
   }
 
   function approveMember(
     address _member
   ) onlyMembers() external returns (uint16) 
   {
-      if (membersIndex[_member] == 0) return logError(201);
+      if (membersIndex[_member] == 0) return logError(ERRMEMBERNOTEXISTS);
       var member = members[membersIndex[_member]-1];
 
-      if (member.approver1 == 0) return logError(202);
-      if (member.approver1 == msg.sender) return logError(203);
-      if (member.approver2 != 0) return logError(204);
+      if (member.approver1 == 0) return logError(ERRINVALIDSTATE);
+      if (member.approver2 != 0) return logError(ERRINVALIDSTATE);
+
+      if (member.approver1 == msg.sender) return logError(ERRINVALIDCALLER);
       
       member.approver2 = msg.sender;
       
       LogMemberAction("member-approved",_member);
+      return ERRNONE;
   }
 
   function addTask(
@@ -138,9 +159,9 @@ contract TaskCrowd {
      uint8   _maxWorkload
   )  onlyMembers() external returns (uint16) {
 
-        if (msg.sender == _member) return logError(301);
-        if (membersIndex[_member] == 0) return logError(306);
-        if (tasksIndex[_taskId] != 0 ) return logError(302);
+        if (msg.sender == _member) return logError(ERRINVALIDCALLER);
+        if (membersIndex[_member] == 0) return logError(ERRMEMBERNOTEXISTS);
+        if (tasksIndex[_taskId] != 0 ) return logError(ERRTASKALREADYEXISTS);
 
         tasks.push( Task({
            status        : TaskStatus.Doing,
@@ -157,6 +178,7 @@ contract TaskCrowd {
         tasksIndex[_taskId] = tasks.length;
         
         LogTaskAction("task-added",_taskId);
+        return ERRNONE;
   }
   
   function finishTask(
@@ -164,18 +186,19 @@ contract TaskCrowd {
      uint8    _finalWorkload
   ) external returns (uint16)  {
 
-       if (tasksIndex[_taskId] == 0 ) return logError(401);
+       if (tasksIndex[_taskId] == 0 ) return logError(ERRTASKNOTEXISTS);
        var task = tasks[tasksIndex[_taskId]-1];
        
-       if (task.status != TaskStatus.Doing) return logError(402);
-       if (task.member != msg.sender) return logError(403);
+       if (task.status != TaskStatus.Doing) return logError(ERRINVALIDSTATE);
+       if (task.member != msg.sender) return logError(ERRINVALIDCALLER);
 
-       if (_finalWorkload > task.maxWorkload) return logError(404);
+       if (_finalWorkload > task.maxWorkload) return logError(ERRINVALIDWORKLOAD);
        
        task.finalWorkload = _finalWorkload;
        task.status = TaskStatus.Finished;
        
        LogTaskAction("task-finished",_taskId);
+       return ERRNONE;
        
   }
   
@@ -184,26 +207,26 @@ contract TaskCrowd {
   ) onlyMembers() external returns (uint16) 
   {
     
-    if (tasksIndex[_taskId] == 0 )  return logError(501);
+    if (tasksIndex[_taskId] == 0 )  return logError(ERRTASKNOTEXISTS);
     Task storage task = tasks[tasksIndex[_taskId]-1];
-    if (task.member == msg.sender)  return logError(502);
+    if (task.member == msg.sender)  return logError(ERRINVALIDCALLER);
 
     if (task.status == TaskStatus.Finished) {
       task.status = TaskStatus.Approving;
       task.approver1 = msg.sender;
       LogTaskAction("task-approving",_taskId);
-      return;
+      return ERRNONE;
     }
 
     if (task.status == TaskStatus.Approving) {
-       if (task.approver1 == msg.sender) return logError(503);
+       if (task.approver1 == msg.sender) return logError(ERRINVALIDCALLER);
        task.approver2 = msg.sender;
        task.status = TaskStatus.Approved;
        LogTaskAction("task-approved",_taskId);
-       return;
+       return ERRNONE;
     }
 
-    return logError(504);
+    return logError(ERRINVALIDSTATE);
 
   }
 
