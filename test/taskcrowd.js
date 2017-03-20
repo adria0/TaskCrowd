@@ -44,7 +44,6 @@ contract('TaskCrowdFactory', accounts => {
   it("cannot add existing member", function() {
     return tc.addMember( rockcavy, "rockcavy1", { from : capybara } )
     .then ( _result => {
-      console.log("LOGS =>",_result.logs);
       assert.equal( _result.logs.length, 1);      
       assert.equal( _result.logs[0].event, "LogError");      
     })
