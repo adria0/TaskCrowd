@@ -1,13 +1,15 @@
-var ADDRZERO = "0x0000000000000000000000000000000000000000"
+"use strict";
+
+var ADDRZERO              = "0x0000000000000000000000000000000000000000"
 
 var account
 var taskCrowd
-var members       = []
-var membersByAddr = new Object();
-var tasks         = []
+var members               = []
+var membersByAddr         = new Object();
+var tasks                 = []
 
-var refreshCount        = 0
-var startingBlockNumber = -1
+var refreshCount          = 0
+var startingBlockNumber   = -1
 var lineStatusBlock
 var lineStatusNetwork
 
@@ -46,39 +48,33 @@ function member_icon(_addr, _scale) {
   });
 
   icon.addEventListener('click', () => {
-    var ct = document.getElementById("copyTarget");
-    ct.style.display = 'block';
-    ct.setAttribute("value",_addr);
-    ct.focus()
-    ct.setSelectionRange(0,_addr.length)
+    $("#copyTarget").css("display","block");
+    $("#copyTarget").attr("value",_addr);
+    $("#copyTarget").select()
+    $("#copyTarget")[0].setSelectionRange(0,_addr.length)
     document.execCommand('copy');
-    ct.style.display = 'none';
+    $("#copyTarget").css("display","none");
     toastr.info(addr_url(_addr,'Address ')+' copied to clipboard');
   }, false);
 
-  return icon;
+  return $(icon);
 }
 
 function set_member_icon(_addr, _element) {
 
   var name = member_name(_addr);
 
-  _element.innerHTML = '';
-  var e = document.createElement("div")
-  e.setAttribute("class","blockymember");
-  var text = document.createElement("div")
-  text.innerHTML = name;
-  var icon = member_icon(_addr,4)
-  icon.setAttribute("class","blocky");
-  e.appendChild(icon)
-  e.appendChild(text)
-  _element.appendChild(e)
+  _element.html('');
+  var e = $("<div>")
+  e.attr("class","blockymember");
+  e.append(member_icon(_addr,4).attr("class","blocky"))
+  e.append($("<div>").text(name))
+  _element.append(e)
 
 }
 
 function add_log(_message) {
-  var logs = document.getElementById("logs");
-  logs.innerHTML = _message+"<br>"+logs.innerHTML;
+  $("#logs").html(_message+"<br>"+$("#logs").html());
 };
 
 function taskstatus2str(_status) {
@@ -113,8 +109,6 @@ function refresh_current_account() {
       return;
     }
 
-    var currentAccountElement = document.getElementById("currentAccount");
-
     if (account != _accs[0] ) {
 
       account = _accs[0];
@@ -140,7 +134,7 @@ function refresh_current_account() {
       taskcrowdAddress = "Deployed at "+addr_url(taskCrowd.address,taskCrowd.address);
    } catch(e) {}
 
-   document.getElementById("statusline").innerHTML = lineStatusNetwork + "<br>" + taskcrowdAddress + "<br>" + lineStatusBlock;
+   $("#statusline").html(lineStatusNetwork + "<br>" + taskcrowdAddress + "<br>" + lineStatusBlock);
 
    refreshCount++;
 
@@ -258,6 +252,8 @@ function approve_task(_taskId) {
 
 function update_project_info() {
 
+    set_status("Reloading data...",true);
+
     tasks = []
     members = []
     membersByAddr = new Object();
@@ -292,22 +288,21 @@ function update_project_info() {
 
        members.sort((a, b)=>{return a.name.localeCompare(b.name)});
 
-       set_member_icon(account,$("#currentMember")[0])
+       set_member_icon(account,$("#currentMember"))
        $("#addMemberBtn").prop("disabled",!is_account_member());
        $("#addTaskBtn").prop("disabled",!is_account_member());
 
-       var table = document.getElementById("members");
-
-       remove_table_rows(table)
+       remove_table_rows($("#members")[0])
 
        for (i=0;i<members.length;i++) {
 
-          var row = table.insertRow(-1);
+          var row = $("<tr>");
+          $("#members").append(row);
 
-          var cellName      = row.insertCell(0);
-          var cellApprover1 = row.insertCell(1);
-          var cellApprover2 = row.insertCell(2);
-          var cellActions   = row.insertCell(3);
+          var cellName      = $("<td>"); row.append(cellName);
+          var cellApprover1 = $("<td>"); row.append(cellApprover1);
+          var cellApprover2 = $("<td>"); row.append(cellApprover2);
+          var cellActions   = $("<td>"); row.append(cellActions);
 
           set_member_icon(members[i].address,cellName);
           set_member_icon(members[i].approver1,cellApprover1);
@@ -316,7 +311,7 @@ function update_project_info() {
             set_member_icon(members[i].approver2,cellApprover2);
           } else {
             if (members[i].approver1 != account && is_account_member() )
-              cellActions.innerHTML = "<button onclick='approve_member(\""+members[i].address+"\")'>Approve</button>";
+              cellActions.html("<button onclick='approve_member(\""+members[i].address+"\")'>Approve</button>");
           }
        }
 
@@ -356,28 +351,27 @@ function update_project_info() {
 
        tasks.sort((a, b)=>{return a.taskId-b.taskId});
 
-       var table = document.getElementById("tasks");
-
-       remove_table_rows(table)
+       remove_table_rows($("#tasks")[0])
 
        for (i=0;i<tasks.length;i++) {
 
-          var row             = table.insertRow(-1);
+          var row = $("<tr>");
+          $("#tasks").append(row);
 
-          var cellId          = row.insertCell(0);
-          var cellOwner       = row.insertCell(1);
-          var cellDescription = row.insertCell(2);
-          var cellStatus      = row.insertCell(3);
-          var cellWorkload    = row.insertCell(4);
-          var cellApprover1   = row.insertCell(5);
-          var cellApprover2   = row.insertCell(6);
-          var cellActions     = row.insertCell(7);
+          var cellId          = $("<td>"); row.append(cellId);
+          var cellOwner       = $("<td>"); row.append(cellOwner);
+          var cellDescription = $("<td>"); row.append(cellDescription);
+          var cellStatus      = $("<td>"); row.append(cellStatus);
+          var cellWorkload    = $("<td>"); row.append(cellWorkload);
+          var cellApprover1   = $("<td>"); row.append(cellApprover1);
+          var cellApprover2   = $("<td>"); row.append(cellApprover2);
+          var cellActions     = $("<td>"); row.append(cellActions);
 
-          cellId.innerHTML = tasks[i].taskId;
+          cellId.text(tasks[i].taskId);
           set_member_icon(tasks[i].member,cellOwner);
-          cellDescription.innerHTML = tasks[i].description;
-          cellStatus.innerHTML = taskstatus2str(tasks[i].status.toNumber());
-          cellWorkload.innerHTML = tasks[i].finalWorkload.toNumber() + "/" + tasks[i].maxWorkload.toNumber();
+          cellDescription.text(tasks[i].description);
+          cellStatus.text(taskstatus2str(tasks[i].status.toNumber()));
+          cellWorkload.text(tasks[i].finalWorkload.toNumber() + "/" + tasks[i].maxWorkload.toNumber());
 
           if (tasks[i].approver1 != ADDRZERO) {
             set_member_icon(tasks[i].approver1,cellApprover1);
@@ -388,54 +382,36 @@ function update_project_info() {
 
           switch (tasks[i].status.toNumber()) {
             case 0:
-              console.log(account+"=="+tasks[i].member)
               if (account==tasks[i].member)
-                cellActions.innerHTML = "<button onclick='finish_task("+tasks[i].taskId+")'>Finish</button>";
+                cellActions.html("<button onclick='finish_task("+tasks[i].taskId+")'>Finish</button>");
               break;
             case 1:
               if (account!=tasks[i].member && is_account_member())
-                cellActions.innerHTML = "<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>";
+                cellActions.html("<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>");
               break;
             case 2:
               if (account!=tasks[i].member && account!=tasks[i].approver1 && is_account_member())
-                cellActions.innerHTML = "<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>";
+                cellActions.html("<button onclick='approve_task("+tasks[i].taskId+")'>Approve</button>");
               break;
           }
 
        }
-       add_log("done");
-
+       set_status("",false);
 
     }).catch( (e) => {
+      set_status("",false);
       add_log("Error getting info "+e);
     });
 
 }
 
-window.onload = function() {
+function set_contract_address(_addr) {
 
-  toastr.options.timeOut = 4000;
-
-/*
-  TaskCrowd.deployed()
-  .then( _taskCrowd => {
-    taskCrowd = _taskCrowd;
-    return taskCrowd.name();
-  }).then ( _name => {
-
-*/    
-  taskCrowd = TaskCrowd.at("0x7b6b01d2a669d602c87d5b453c2ed9115daddbb7");
+  taskCrowd = TaskCrowd.at(_addr);
   taskCrowd.name()
   .then ( _name => {
 
-    document.getElementById("taskCrowdName").innerHTML = _name +" Task Crowd ";
-
     web3.version.getNetwork( (_error, _network) => {
-
-       if (_error != null) {
-         document.getElementById("network").innerHTML = errror;
-         return;
-       }
 
        var networkName = "Network "+_network;
 
@@ -446,12 +422,33 @@ window.onload = function() {
 
        lineStatusNetwork = networkName;
 
+       $("#etherscan").attr("src","https://testnet.etherscan.io/address/"+_addr);
+       $("#taskCrowdName").html(_name +" Task Crowd ");
+
        refresh_current_account();
 
     })
 
   });
 
+
+
+}
+
+window.onload = function() {
+
+  toastr.options.timeOut = 4000;
+
+  set_contract_address("0xbf72c4e6e0a1c1a31d36deeeb94d0a73ddbce097");
+
+/*
+  TaskCrowd.deployed()
+  .then( _taskCrowd => {
+    taskCrowd = _taskCrowd;
+    return taskCrowd.name();
+  }).then ( _name => {
+
+*/    
   $("#addMemberBtn").click( () => { add_member(); })
   $("#addTaskBtn").click( () => { add_task(); })
 
