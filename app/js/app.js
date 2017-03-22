@@ -145,11 +145,11 @@ function refresh_current_account() {
 };
 
 function do_transaction(_promise) {
+  set_status("Waiting network agrees with operation...",true);
   _promise
   .then ( (_tx) => {
     toastr.info('Operation sent');
     add_log("tx "+tx_url(_tx.tx,_tx.tx));
-    set_status("Waiting network agrees with operation...",true);
     return getTransactionReceiptMined(_tx.tx);     
   }).then ( ( _resolve, _reject ) => {
     set_status("",false);
@@ -422,7 +422,7 @@ function set_contract_address(_addr) {
 
        lineStatusNetwork = networkName;
 
-       $("#etherscan").attr("src","https://testnet.etherscan.io/address/"+_addr);
+       $("#etherscan").attr("src","https://www.etherscan.io/address/"+_addr);
        $("#taskCrowdName").html(_name +" Task Crowd ");
 
        refresh_current_account();
@@ -439,16 +439,8 @@ window.onload = function() {
 
   toastr.options.timeOut = 4000;
 
-  set_contract_address("0xbf72c4e6e0a1c1a31d36deeeb94d0a73ddbce097");
+  set_contract_address("0x7a8B98B02E6792C847Ab0a6ce01b087Fca8ce826");
 
-/*
-  TaskCrowd.deployed()
-  .then( _taskCrowd => {
-    taskCrowd = _taskCrowd;
-    return taskCrowd.name();
-  }).then ( _name => {
-
-*/    
   $("#addMemberBtn").click( () => { add_member(); })
   $("#addTaskBtn").click( () => { add_task(); })
 

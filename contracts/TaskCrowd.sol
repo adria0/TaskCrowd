@@ -34,7 +34,6 @@ contract TaskCrowd {
    // Construction parameters  -----------------------------------------------
 
    string  public name;
-   address public superseded;
    uint8   public rate; // rate per hour
 
 
