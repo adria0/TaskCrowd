@@ -14,9 +14,9 @@ contract('TaskCrowdFactory', accounts => {
 
     TaskCrowdFactory.deployed()
     .then( _factory => {
-      return _factory.create("niceshower",1,"capybara",rockcavy,"rockcavy" , { from : capybara } );
+      return _factory.create("niceshower",1,capybara,"capybara",rockcavy,"rockcavy" , { from : capybara } );
     }).then ( _result => {
-      assert.equal( _result.logs.length, 1, "One contract is created");
+      assert.equal( _result.logs.length, 1, "One contract is created");      
       tc = TaskCrowd.at(_result.logs[0].args.addr);
       done();
     })
@@ -65,14 +65,16 @@ contract('TaskCrowdFactory', accounts => {
       return tc.addMember( coypu, "coypu", { from : capybara } )
     }).then ( _result => {
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogMemberAdded");
+      assert.equal( _result.logs[0].event, "LogMemberAction");
+      assert.equal( _result.logs[0].args.msg, "member-added");
       return tc.isMemberEnrolled(coypu);
     }).then ( _enrolled  => {
       assert.equal( _enrolled, false, "Should not enrolled yet");
       return tc.approveMember(coypu, { from : rockcavy } );
     }).then ( _result  => {   
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogMemberApproved");
+      assert.equal( _result.logs[0].event, "LogMemberAction");
+      assert.equal( _result.logs[0].args.msg, "member-approved");
       return tc.isMemberEnrolled(coypu);
     }).then ( _enrolled  => {
       assert.equal( _enrolled, true, "Should be enrolled");
@@ -97,11 +99,20 @@ contract('TaskCrowdFactory', accounts => {
     })
   });
 
+  it("a member cannot add a task for a non-member", function() {
+    return tc.addTask( cuy, 1, "learngolang", 1000, { from : capybara } )
+    .then ( _result => {   
+      assert.equal( _result.logs.length, 1);      
+      assert.equal( _result.logs[0].event, "LogError");
+    })
+  });
+
   it("cannot create two tasks with the same id", function() {
     return tc.addTask( rockcavy, 1, "tumbling", 1000, { from : capybara } )
     .then ( _result => {   
       assert.equal( _result.logs.length, 1);
-      assert.equal( _result.logs[0].event, "LogTaskAdded");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-added");
       return tc.addTask( rockcavy, 1, "openfaucetagain", 1000, { from : capybara } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
@@ -113,7 +124,8 @@ contract('TaskCrowdFactory', accounts => {
     return tc.addTask( rockcavy, 1, "backstroke", 1000, { from : capybara } )
     .then ( _result => {
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskAdded");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-added");      
       return tc.finishTask( 1, 1000, { from : capybara } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
@@ -121,7 +133,8 @@ contract('TaskCrowdFactory', accounts => {
       return tc.finishTask( 1, 1000, { from : rockcavy } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskFinished");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-finished");
     })
   });
 
@@ -129,7 +142,8 @@ contract('TaskCrowdFactory', accounts => {
     return tc.addTask( rockcavy, 1, "swim", 1000, { from : capybara } )
     .then ( _result => {
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskAdded");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-added");
       return tc.finishTask( 1, 1001, { from : rockcavy } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
@@ -141,11 +155,13 @@ contract('TaskCrowdFactory', accounts => {
     return tc.addTask( rockcavy, 1, "jump", 1000, { from : capybara } )
     .then ( _result => {
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskAdded");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-added");
       return tc.finishTask( 1, 1000, { from : rockcavy } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskFinished");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-finished");
       return tc.approveTask( 1, 1000, { from : rockcavy } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
@@ -156,16 +172,19 @@ contract('TaskCrowdFactory', accounts => {
   it("task should be approved by two different members", function() {
     return tc.addTask( rockcavy, 1, "playwithball", 1000, { from : capybara } )
     .then ( _result => {
-      assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskAdded");
+      assert.equal( _result.logs.length, 1);
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-added");
       return tc.finishTask( 1, 1000, { from : rockcavy } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskFinished");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-finished");
       return tc.approveTask( 1, 1000, { from : capybara } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskApproving");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-approving");
       return tc.approveTask( 1, 1000, { from : capybara } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);
@@ -177,7 +196,9 @@ contract('TaskCrowdFactory', accounts => {
       return tc.approveTask( 1, 1000, { from : coypu } )
     }).then ( _result => {   
       assert.equal( _result.logs.length, 1);      
-      assert.equal( _result.logs[0].event, "LogTaskApproved");
+      assert.equal( _result.logs[0].event, "LogTaskAction");
+      assert.equal( _result.logs[0].args.msg, "task-approved");
+
     })
   });
 

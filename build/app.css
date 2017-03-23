@@ -1,0 +1,65 @@
+
+
+
+ul.tab-nav {
+    list-style: none;
+    border-bottom: 1px solid #bbb;
+    padding-left: 5px;
+}
+
+ul.tab-nav li {
+    display: inline;
+}
+
+ul.tab-nav li a.button {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: -1px;
+    border-bottom: none;
+}
+
+ul.tab-nav li a.active.button {
+    border-bottom: 1px solid #fff;
+}
+
+.tab-content .tab-pane {
+    display: none;
+}
+
+.tab-content .tab-pane.active {
+    display: block;
+}
+
+/*
+  Follow https://www.ethereum.org/images/logos/Ethereum_Visual_Identity_1.0.0.pdf
+*/
+.info {
+  font-size: 12;
+}
+
+.blockymember {
+  width: 100px;
+  text-align: center;
+}
+
+.blocky {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 0 auto;
+  cursor: pointer; cursor: hand;
+}
+
+.topcorner{
+   position:absolute;
+   top:10;
+   right:10;
+}
+
+.status{
+  height: 32px;
+  display:block;
+}
+
+.h2 {
+  -webkit-margin-after : 0px;
+}
