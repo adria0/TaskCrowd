@@ -1,10 +1,10 @@
 
 function tx_url(_addr,_text) {
-  return "<a href=https://testnet.etherscan.io/tx/"+_addr+" target="+_addr+">"+_text+"</a>";
+  return "<a href=https://www.etherscan.io/tx/"+_addr+" target="+_addr+">"+_text+"</a>";
 }
 
 function addr_url(_addr,_text) {
-  return "<a href=https://testnet.etherscan.io/address/"+_addr+" target="+_addr+">"+_text+"</a>";
+  return "<a href=https://www.etherscan.io/address/"+_addr+" target="+_addr+">"+_text+"</a>";
 }
 
 // Metamask fiendly getTransactionReceiptMined
