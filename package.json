@@ -1,0 +1,29 @@
+{
+  "name": "taskcrowd",
+  "version": "1.0.0",
+  "description": "-",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.23.0",
+    "truffle-default-builder": "^2.0.0"
+  },
+  "devDependencies": {
+    "babel-polyfill": "^6.23.0"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adriamb/TaskCrowd.git"
+  },
+  "author": "adria@codecontext.io",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adriamb/TaskCrowd/issues"
+  },
+  "homepage": "https://github.com/adriamb/TaskCrowd#readme"
+}
