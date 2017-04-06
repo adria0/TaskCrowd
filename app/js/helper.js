@@ -1,10 +1,16 @@
 
+function get_etherscan_base() {
+  if (network == 1) return "www.etherscan.io";
+  if (network == 3) return "ropsten.etherscan.io";
+  return "";
+}
+
 function tx_url(_addr,_text) {
-  return "<a href=https://www.etherscan.io/tx/"+_addr+" target="+_addr+">"+_text+"</a>";
+  return "<a href=https://"+get_etherscan_base()+"/tx/"+_addr+" target="+_addr+">"+_text+"</a>";
 }
 
 function addr_url(_addr,_text) {
-  return "<a href=https://www.etherscan.io/address/"+_addr+" target="+_addr+">"+_text+"</a>";
+  return "<a href=https://"+get_etherscan_base()+"/address/"+_addr+" target="+_addr+">"+_text+"</a>";
 }
 
 // Metamask fiendly getTransactionReceiptMined

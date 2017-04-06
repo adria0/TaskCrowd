@@ -2,6 +2,7 @@
 
 var ADDRZERO              = "0x0000000000000000000000000000000000000000"
 
+var network
 var account
 var taskCrowd
 var members               = []
@@ -261,8 +262,6 @@ function update_project_info() {
     taskCrowd.getMemberCount()
     .then ( (_memberCount) => {
 
-        add_log("Membercount="+_memberCount);
-
         var promises = []
         var memberCount = _memberCount.toNumber();
 
@@ -321,8 +320,6 @@ function update_project_info() {
 
         var promises = []
         var taskCount = _taskCount.toNumber();
-
-        add_log("taskCount="+_taskCount);
 
         for (i=0;i<taskCount;i++) {
 
@@ -405,33 +402,20 @@ function update_project_info() {
 
 }
 
-function set_contract_address(_addr) {
+function set_contract(_taskCrowd) {
 
-  taskCrowd = TaskCrowd.at(_addr);
+  taskCrowd = _taskCrowd;
+
   taskCrowd.name()
   .then ( _name => {
 
-    web3.version.getNetwork( (_error, _network) => {
+     $("#taskCrowdName").html(_name +" Task Crowd ");
 
-       var networkName = "Network "+_network;
+     refresh_current_account();
 
-       if (_network == 1) networkName = "Main Network";
-       else if (_network == 2) networkName = "Morden Network";
-       else if (_network == 3) networkName = "Ropsten Network";
-       else networkName = "Unknown Network";
-
-       lineStatusNetwork = networkName;
-
-       $("#etherscan").attr("src","https://www.etherscan.io/address/"+_addr);
-       $("#taskCrowdName").html(_name +" Task Crowd ");
-
-       refresh_current_account();
-
-    })
-
+  }).catch ( _err => {
+    set_status(_err,false);
   });
-
-
 
 }
 
@@ -439,7 +423,32 @@ window.onload = function() {
 
   toastr.options.timeOut = 4000;
 
-  set_contract_address("0x7a8B98B02E6792C847Ab0a6ce01b087Fca8ce826");
+  web3.version.getNetwork( (_error, _network) => {
+
+     if (_error != null) {
+          set_status(_error,false);
+          return;
+     }
+
+     network = _network;
+
+     var networkName = "Network "+_network;
+
+     if (network == 1) networkName = "Main Network";
+     else if (network == 3) networkName = "Ropsten Network";
+     else networkName = "Unknown Network";
+
+     lineStatusNetwork = networkName;
+
+     if ( network in deployAddresses ) {
+       set_contract(TaskCrowd.at(deployAddresses[network]))
+     } else {
+       TaskCrowd.deployed()
+       .then  ( _addr => { set_contract(_addr) })
+       .catch ( _err  => { set_status(_err,false) });        
+     }
+
+  });
 
   $("#addMemberBtn").click( () => { add_member(); })
   $("#addTaskBtn").click( () => { add_task(); })

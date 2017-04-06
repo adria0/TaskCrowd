@@ -5,13 +5,14 @@ module.exports = {
   build: new DefaultBuilder({
     "index.html" : "index.html",
     "app.js": [
-      "js/skeleton-tabs.js",
-      "js/blockies.js",
+      "lib/skeleton-tabs/js/skeleton-tabs.js",
+      "lib/blockies/js/blockies.js",
+      "js/deploy.js",
       "js/helper.js",
       "js/app.js"
     ],
     "app.css": [
-      "css/skeleton-tabs.css",
+      "lib/skeleton-tabs/css/skeleton-tabs.css",
       "css/app.css"
     ],
     "img/": "img/"
