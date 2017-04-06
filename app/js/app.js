@@ -167,6 +167,22 @@ function do_transaction(_promise) {
 }
 
 function errcode_2_str(_errCode) {
+
+  let errors = {
+    0 : "ERRNONE",
+    1 : "ERRMEMBERALREADYEXISTS",
+    2 : "ERRMEMBERNOTEXISTS",
+    3 : "ERRINVALIDSTATE",
+    4 : "ERRINVALIDCALLER", 
+    5 : "ERRTASKALREADYEXISTS",
+    6 : "ERRTASKNOTEXISTS",
+    7 : "ERRINVALIDWORKLOAD"
+  };
+
+  if ( _errCode in errors ) {
+    return "Error "+errors[_errCode];
+  }
+
   return "Error "+  _errCode;
 }
 
